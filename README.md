@@ -2,7 +2,7 @@
 Middleware to connect genesys web messaging to personal llm. Support multi llm, chat history, and chat history to prompt for context.
 
 ## Project Structure
-
+```
 src/
 ├── app.module.ts                          ← ConfigModule + TypeORM + Redis + Chat
 ├── main.ts                                ← Global ValidationPipe
@@ -27,14 +27,15 @@ src/
     └── 1712678400000-CreateConversations.ts
 data-source.ts                             ← TypeORM CLI data source
 .env                                       ← All env vars
-
+```
 ## Run the migration
-npm run migration:run
+```npm run migration:run```
 
 ## Start the server
-npm run start:dev
+```npm run start:dev```
 
 ## Payload example
+```
 POST http://localhost:3000/chat
 Headers:
   x-api-key: your-secret-api-key-here
@@ -52,3 +53,4 @@ Response:
   "reply": "I'm doing well, how can I help?",
   "success": true
 }
+```
