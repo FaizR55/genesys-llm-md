@@ -3,6 +3,21 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Conversation, MessageRole } from './conversation.entity';
 
+export interface PaginatedHistoryQuery {
+  userId?: string;
+  conversationId?: string;
+  page: number;
+  perPage: number;
+}
+
+export interface PaginatedHistoryResult {
+  data: Conversation[];
+  page: number;
+  perPage: number;
+  total: number;
+  totalPages: number;
+}
+
 @Injectable()
 export class ConversationService {
   private readonly logger = new Logger(ConversationService.name);
@@ -36,5 +51,37 @@ export class ConversationService {
       take: limit,
     });
     return rows.reverse();
+  }
+
+  async getPaginatedHistory(
+    query: PaginatedHistoryQuery,
+  ): Promise<PaginatedHistoryResult> {
+    const { userId, conversationId, page, perPage } = query;
+
+    const queryBuilder = this.conversationRepo
+      .createQueryBuilder('conversation')
+      .orderBy('conversation.createdAt', 'ASC')
+      .skip((page - 1) * perPage)
+      .take(perPage);
+
+    if (userId) {
+      queryBuilder.andWhere('conversation.userId = :userId', { userId });
+    }
+
+    if (conversationId) {
+      queryBuilder.andWhere('conversation.conversationId = :conversationId', {
+        conversationId,
+      });
+    }
+
+    const [data, total] = await queryBuilder.getManyAndCount();
+
+    return {
+      data,
+      page,
+      perPage,
+      total,
+      totalPages: total === 0 ? 0 : Math.ceil(total / perPage),
+    };
   }
 }
