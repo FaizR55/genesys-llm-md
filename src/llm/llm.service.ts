@@ -57,9 +57,9 @@ export class LlmService {
     try {
       let reply: string;
 
-      if (this.provider === 'ollama') {
-        // callAgent does not support ollama — use LLMClient (OpenAI-compatible mode)
-        reply = await this.generateWithOllamaClient(prompt);
+      if (this.provider === 'ollama' || this.provider === 'openai') {
+        // Use LLMClient (Chat Completions API) for ollama and openai
+        reply = await this.generateWithLLMClient(prompt);
       } else {
         const agentOptions: any = {
           provider: this.provider,
@@ -89,12 +89,12 @@ export class LlmService {
     }
   }
 
-  private async generateWithOllamaClient(prompt: string): Promise<string> {
+  private async generateWithLLMClient(prompt: string): Promise<string> {
     const client = new LLMClient({
-      provider: 'ollama',
+      provider: this.provider === 'openai' ? 'openai' : 'ollama',
       apiKey: this.apiKey,
       model: this.model,
-      baseURL: this.endpoint,
+      ...(this.endpoint ? { baseURL: this.endpoint } : {}),
     });
 
     const response = await client.chat({

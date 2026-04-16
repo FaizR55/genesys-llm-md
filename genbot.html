@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Genesys Fullscreen Widget</title>
+
+  <style>
+    /* Remove default margins and force full screen */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    /* Optional container if you want to control layout later */
+    #app {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <!-- Overlay to block widget input while waiting for bot reply -->
+  <div id="chat-blocker" style="
+    display: none;
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 400px;
+    height: 80px;
+    z-index: 999999;
+    cursor: not-allowed;
+  "></div>
+
+  <!-- Genesys Widget Script -->
+  <script type="text/javascript" charset="utf-8">
+    let genesysConfig = null;
+
+    // Fetch Genesys config from API
+    async function initGenesys() {
+      try {
+        const response = await fetch('/config/genesys');
+        genesysConfig = await response.json();
+        console.log('✅ Genesys config loaded:', genesysConfig);
+
+        // Initialize Genesys widget
+        (function (g, e, n, es, ys) {
+          g['_genesysJs'] = e;
+          g[e] = g[e] || function () {
+            (g[e].q = g[e].q || []).push(arguments);
+          };
+          g[e].t = 1 * new Date();
+          g[e].c = es;
+          ys = document.createElement('script');
+          ys.async = 1;
+          ys.src = n;
+          ys.charset = 'utf-8';
+          document.head.appendChild(ys);
+        })(window, 'Genesys', 'https://apps.mypurecloud.jp/genesys-bootstrap/genesys.min.js', genesysConfig);
+
+        setupEventListeners();
+      } catch (error) {
+        console.error('❌ Failed to load Genesys config:', error);
+      }
+    }
+
+    // not working, need to find correct events or APIs
+    function setupEventListeners() {
+      let waitingForReply = false;
+
+      // Log all Genesys events to find the right ones
+      console.log('🔍 Monitoring Genesys events...');
+      Genesys('subscribe', 'Messenger.ready', function () {
+        console.log('✅ Messenger ready');
+      });
+
+      // Try to disable input when user sends message
+      Genesys('subscribe', 'MessagingService.messageSent', function (data) {
+        console.log('📤 Message sent:', data);
+        waitingForReply = true;
+        // Try various APIs to disable input
+        Genesys('putUserData', 'inputDisabled', 'true');
+        console.log('🔒 Input blocked (attempted)');
+      });
+
+      // Re-enable input when bot replies
+      Genesys('subscribe', 'MessagingService.messageReceived', function (data) {
+        console.log('📥 Message received:', data);
+        if (data && data.from === 'Agent') {
+          waitingForReply = false;
+          Genesys('putUserData', 'inputDisabled', 'false');
+          console.log('🔓 Input unblocked');
+        }
+      });
+
+      // Alternative: subscribe to all events to see what's available
+      Genesys('subscribe', '*', function (eventName, data) {
+        if (typeof eventName === 'string' && (eventName.includes('Message') || eventName.includes('Input') || eventName.includes('Conversation'))) {
+          console.log('📡 Event:', eventName, data);
+        }
+      });
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initGenesys);
+    } else {
+      initGenesys();
+    }
+  </script>
+</body>
+</html>
