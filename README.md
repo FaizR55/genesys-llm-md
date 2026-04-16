@@ -1,5 +1,5 @@
 ## About
-Middleware to connect genesys web messaging to personal llm. Support multi llm, chat history, and chat history to prompt for context.
+Middleware to simplify api calling to personal llm. Support multi llm, header api key, chat history, redis to store chat history, and chat history to prompt for context.
 
 ## Project Structure
 ```
