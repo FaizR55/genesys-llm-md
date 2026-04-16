@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ChatDto } from './dto/chat.dto';
+import { HistoryQueryDto } from './dto/history-query.dto';
 import { ConversationService } from '../conversation/conversation.service';
 import { LlmService } from '../llm/llm.service';
 import { RedisService } from '../redis/redis.service';
@@ -102,6 +103,15 @@ export class ChatService {
     await this.redisService.del(cacheKey);
 
     return { reply, success: true };
+  }
+
+  async getHistory(query: HistoryQueryDto) {
+    return this.conversationService.getPaginatedHistory({
+      userId: query.userId,
+      conversationId: query.conversationId,
+      page: query.page,
+      perPage: query.perPage,
+    });
   }
 
   private buildPrompt(history: Conversation[], latestMessage: string): string {
